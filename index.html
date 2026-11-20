@@ -76,6 +76,7 @@
   const GRAPH = "https://graph.microsoft.com/v1.0";
   const PAGE_SIZE = 25;
   let msalApp, account = null, currentFolder = "inbox", nextLink = null, currentUrl = null, prevLinks = [], currentMessages = [];
+  let initPromise;
 
   const $ = id => document.getElementById(id);
   const show = (id, yes) => $(id).classList.toggle("hidden", !yes);
@@ -84,6 +85,11 @@
   const setStatus = (msg, error=false) => { $("loginStatus").textContent=msg; $("loginStatus").className="status"+(error?" error":""); };
 
   async function init() {
+    $("signin").disabled = true;
+    if (!window.msal || !window.msal.PublicClientApplication) {
+      setStatus("Không tải được thư viện đăng nhập Microsoft (MSAL). Hãy tải lại trang hoặc thử trình duyệt khác.", true);
+      return;
+    }
     if (!CLIENT_ID || CLIENT_ID.includes("PASTE_")) {
       setStatus("Bạn cần điền Client ID theo hướng dẫn trong file README trước khi sử dụng.", true);
       $("signin").disabled = true;
@@ -101,13 +107,17 @@
       if (accounts.length) account = accounts[0];
     }
     if (account) await enterApp();
+    $("signin").disabled = false;
   }
 
   async function login() {
     try {
+      setStatus("Đang chuẩn bị đăng nhập Microsoft...");
+      if (initPromise) await initPromise;
+      if (!msalApp) throw new Error("Ứng dụng đăng nhập chưa khởi tạo được. Hãy tải lại trang; nếu vẫn lỗi, kiểm tra kết nối tới thư viện MSAL.");
       setStatus("Đang chuyển đến trang đăng nhập Microsoft...");
       await msalApp.loginRedirect({ scopes:["Mail.Read"], prompt:"select_account" });
-    } catch(e) { setStatus(e.message || "Không thể đăng nhập.", true); }
+    } catch(e) { setStatus(e.message || "Không thể đăng nhập.", true); $("signin").disabled = false; }
   }
 
   async function logout() {
@@ -216,7 +226,7 @@
     await loadFolder(currentFolder,url,false);
   });
 
-  init().catch(e=>setStatus(e.message || "Lỗi khởi tạo ứng dụng.",true));
+  initPromise = init().catch(e=>{ $("signin").disabled = false; setStatus(e.message || "Lỗi khởi tạo ứng dụng.",true); });
 })();
 </script>
 </body>
