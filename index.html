@@ -31,7 +31,18 @@
     .hidden{display:none!important}.status{padding:14px;color:#64748b;font-size:13px}.error{color:#b42318}.foot{text-align:center;color:#8a96a8;font-size:11px;margin:22px}
     @media(max-width:720px){.mail-layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;gap:5px}.folder{width:auto;white-space:nowrap}.msg{grid-template-columns:1fr 90px;gap:4px}.msg .content{grid-column:1}.msg .date{grid-column:2;grid-row:1}.sender{margin-bottom:4px}.login{margin:25px auto;padding:25px}.top{padding:15px}.account{max-width:42vw}}
   </style>
-  <script src="https://alcdn.msauth.net/browser/4.26.2/js/msal-browser.min.js"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.26.2/lib/msal-browser.min.js"
+  crossorigin="anonymous"></script>
+<script>
+  // Dự phòng CDN thứ hai nếu jsDelivr không tải được.
+  if (!window.msal) {
+    const fallback = document.createElement("script");
+    fallback.src = "https://unpkg.com/@azure/msal-browser@4.26.2/lib/msal-browser.min.js";
+    fallback.crossOrigin = "anonymous";
+    document.head.appendChild(fallback);
+  }
+</script>
 </head>
 <body>
 <header class="top">
