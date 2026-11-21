@@ -1,244 +1,28 @@
 <!doctype html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1457d9">
-  <title>Hotmail Reader – Chỉ xem email</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{font-family:Inter,system-ui,Arial,sans-serif;color:#172033;background:#f4f7fb}
-    *{box-sizing:border-box}body{margin:0}
-    .top{background:#1457d9;color:white;padding:18px max(18px,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:14px}
-    .brand{font-size:19px;font-weight:700;display:flex;align-items:center;gap:10px}.brand small{font-size:11px;font-weight:500;opacity:.85;display:block;margin-top:3px}
-    button,.btn{border:0;border-radius:9px;padding:10px 14px;font:600 13px Inter;cursor:pointer}
-    button:disabled{opacity:.5;cursor:not-allowed}.white{background:white;color:#1457d9}.blue{background:#1457d9;color:white}.light{background:#edf2fb;color:#29466f}
-    main{max-width:1180px;margin:24px auto;padding:0 16px}
-    .notice{background:#fff8e7;border:1px solid #f4dca0;color:#72530c;padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.55;margin-bottom:16px}
-    .panel{background:white;border:1px solid #e4eaf3;border-radius:14px;box-shadow:0 5px 22px #20385c0a}
-    .login{max-width:540px;margin:54px auto;padding:34px;text-align:center}.login h1{font-size:24px;margin:8px 0}.login p{color:#66748a;line-height:1.6;font-size:14px}
-    .mail-layout{display:grid;grid-template-columns:255px 1fr;gap:16px}
-    .sidebar{padding:14px;height:max-content}.folder{display:block;width:100%;text-align:left;background:transparent;color:#33435b;margin:3px 0}.folder.active{background:#eaf1ff;color:#1457d9}
-    .toolbar{padding:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #edf0f5}
-    .toolbar input{flex:1;min-width:170px;border:1px solid #dce3ee;border-radius:9px;padding:11px 12px;font:14px Inter}
-    .account{font-size:12px;opacity:.9;max-width:45vw;overflow-wrap:anywhere}
-    .list{min-height:420px}.msg{display:grid;grid-template-columns: minmax(120px,190px) 1fr 112px;gap:12px;padding:14px 16px;border-bottom:1px solid #eef1f5;cursor:pointer;align-items:center}
-    .msg:hover{background:#f7faff}.msg.unread{background:#fbfdff}.sender{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subject{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.preview{font-size:12px;color:#7b8798;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}.date{text-align:right;font-size:11px;color:#78869a}.dot{display:inline-block;width:7px;height:7px;background:#1d65e8;border-radius:50%;margin-right:7px}
-    .empty{padding:48px 18px;text-align:center;color:#7a8798;font-size:14px}.pager{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#738096;font-size:12px}
-    .reader{padding:22px}.back{margin-bottom:16px}.reader h2{font-size:20px;line-height:1.4;margin:8px 0 16px}.meta{font-size:12px;color:#718096;line-height:1.8;border-bottom:1px solid #edf0f5;padding-bottom:14px}.body{font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;padding-top:18px;color:#26354a}.body img{max-width:100%}
-    .hidden{display:none!important}.status{padding:14px;color:#64748b;font-size:13px}.error{color:#b42318}.foot{text-align:center;color:#8a96a8;font-size:11px;margin:22px}
-    @media(max-width:720px){.mail-layout{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;gap:5px}.folder{width:auto;white-space:nowrap}.msg{grid-template-columns:1fr 90px;gap:4px}.msg .content{grid-column:1}.msg .date{grid-column:2;grid-row:1}.sender{margin-bottom:4px}.login{margin:25px auto;padding:25px}.top{padding:15px}.account{max-width:42vw}}
-  </style>
-  <script
-  src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.26.2/lib/msal-browser.min.js"
-  crossorigin="anonymous"></script>
-<script>
-  // Dự phòng CDN thứ hai nếu jsDelivr không tải được.
-  if (!window.msal) {
-    const fallback = document.createElement("script");
-    fallback.src = "https://unpkg.com/@azure/msal-browser@4.26.2/lib/msal-browser.min.js";
-    fallback.crossOrigin = "anonymous";
-    document.head.appendChild(fallback);
-  }
-</script>
-</head>
-<body>
-<header class="top">
-  <div class="brand"><span style="font-size:26px">✉</span><div>Hotmail Reader<small>Trình xem email · Chỉ đọc</small></div></div>
-  <div style="display:flex;align-items:center;gap:10px"><span id="account" class="account"></span><button id="signout" class="white hidden">Đăng xuất</button></div>
-</header>
-<main>
-  <div class="notice"><b>Chế độ chỉ đọc:</b> Ứng dụng chỉ xin quyền <b>Mail.Read</b>. Không có chức năng gửi, xóa, di chuyển hoặc chỉnh sửa email. Mật khẩu được nhập trực tiếp trên trang đăng nhập Microsoft; website không nhận hay lưu mật khẩu.</div>
-  <section id="loginView" class="panel login">
-    <div style="font-size:42px">📬</div><h1>Xem email Hotmail / Outlook</h1>
-    <p>Đăng nhập Microsoft để xem thư trong hộp thư của bạn. Có thể đăng xuất rồi đổi sang tài khoản khác.</p>
-    <button id="signin" class="blue" style="padding:13px 22px;font-size:14px">Đăng nhập bằng Microsoft</button>
-    <p id="loginStatus" class="status"></p>
-  </section>
-  <section id="mailView" class="mail-layout hidden">
-    <aside class="panel sidebar">
-      <button class="folder active" data-folder="inbox">📥 Hộp thư đến</button>
-      <button class="folder" data-folder="sentitems">📤 Thư đã gửi</button>
-      <button class="folder" data-folder="archive">🗄️ Lưu trữ</button>
-      <button class="folder" data-folder="junkemail">🚫 Thư rác</button>
-    </aside>
-    <section class="panel">
-      <div class="toolbar">
-        <input id="search" type="search" placeholder="Tìm trong các thư đang tải...">
-        <button id="refresh" class="light">↻ Làm mới</button>
-      </div>
-      <div id="messageList" class="list"><div class="empty">Đang tải email...</div></div>
-      <div id="pager" class="pager hidden"><span id="pageInfo"></span><div><button id="prev" class="light">Trước</button> <button id="next" class="light">Tiếp</button></div></div>
-    </section>
-  </section>
-  <section id="readerView" class="panel reader hidden">
-    <button id="back" class="light back">← Quay lại danh sách</button>
-    <div id="readerContent"></div>
-  </section>
-  <div class="foot">Kết nối trực tiếp Microsoft Graph · Không có máy chủ trung gian · Không lưu email trên website</div>
-</main>
-<script>
-(() => {
-  // Dán Application (client) ID từ Microsoft Entra vào giữa hai dấu nháy.
-  const CLIENT_ID = "efa585e3-26ae-4d83-88ea-dade29afc5a5";
-  const REDIRECT_URI = window.location.origin + window.location.pathname;
-  const GRAPH = "https://graph.microsoft.com/v1.0";
-  const PAGE_SIZE = 25;
-  let msalApp, account = null, currentFolder = "inbox", nextLink = null, currentUrl = null, prevLinks = [], currentMessages = [];
-  let initPromise;
-
-  const $ = id => document.getElementById(id);
-  const show = (id, yes) => $(id).classList.toggle("hidden", !yes);
-  const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const fmtDate = s => { try { return new Intl.DateTimeFormat("vi-VN",{dateStyle:"short",timeStyle:"short"}).format(new Date(s)); } catch { return ""; } };
-  const setStatus = (msg, error=false) => { $("loginStatus").textContent=msg; $("loginStatus").className="status"+(error?" error":""); };
-
-  async function init() {
-    $("signin").disabled = true;
-    if (!window.msal || !window.msal.PublicClientApplication) {
-      setStatus("Không tải được thư viện đăng nhập Microsoft (MSAL). Hãy tải lại trang hoặc thử trình duyệt khác.", true);
-      return;
-    }
-    if (!CLIENT_ID || CLIENT_ID.includes("PASTE_")) {
-      setStatus("Bạn cần điền Client ID theo hướng dẫn trong file README trước khi sử dụng.", true);
-      $("signin").disabled = true;
-      return;
-    }
-    msalApp = new msal.PublicClientApplication({
-      auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/consumers", redirectUri: REDIRECT_URI },
-      cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
-    });
-    await msalApp.initialize();
-    const result = await msalApp.handleRedirectPromise();
-    if (result?.account) { account = result.account; }
-    else {
-      const accounts = msalApp.getAllAccounts();
-      if (accounts.length) account = accounts[0];
-    }
-    if (account) await enterApp();
-    $("signin").disabled = false;
-  }
-
-  async function login() {
-    try {
-      setStatus("Đang chuẩn bị đăng nhập Microsoft...");
-      if (initPromise) await initPromise;
-      if (!msalApp) throw new Error("Ứng dụng đăng nhập chưa khởi tạo được. Hãy tải lại trang; nếu vẫn lỗi, kiểm tra kết nối tới thư viện MSAL.");
-      setStatus("Đang chuyển đến trang đăng nhập Microsoft...");
-      await msalApp.loginRedirect({ scopes:["Mail.Read"], prompt:"select_account" });
-    } catch(e) { setStatus(e.message || "Không thể đăng nhập.", true); $("signin").disabled = false; }
-  }
-
-  async function logout() {
-    if (!msalApp || !account) return;
-    const old = account; account = null;
-    show("mailView",false); show("readerView",false); show("loginView",true); show("signout",false);
-    await msalApp.logoutRedirect({ account:old, postLogoutRedirectUri:REDIRECT_URI });
-  }
-
-  async function token() {
-    const r = await msalApp.acquireTokenSilent({scopes:["Mail.Read"],account});
-    return r.accessToken;
-  }
-
-  async function graph(url) {
-    const accessToken = await token();
-    const response = await fetch(url, {headers:{Authorization:"Bearer "+accessToken}});
-    if (!response.ok) {
-      let detail = ""; try { detail = (await response.json()).error?.message || ""; } catch {}
-      throw new Error(detail || `Microsoft Graph trả về lỗi ${response.status}`);
-    }
-    return response.json();
-  }
-
-  async function enterApp() {
-    $("account").textContent = account.username || "";
-    show("loginView",false); show("mailView",true); show("signout",true);
-    await loadFolder(currentFolder);
-  }
-
-  async function loadFolder(folder, url=null, push=true) {
-    currentFolder = folder;
-    document.querySelectorAll(".folder").forEach(b=>b.classList.toggle("active",b.dataset.folder===folder));
-    $("messageList").innerHTML='<div class="empty">Đang tải email...</div>';
-    show("pager",false); show("readerView",false); show("mailView",true);
-    try {
-      const endpoint = url || `${GRAPH}/me/mailFolders/${encodeURIComponent(folder)}/messages?$top=${PAGE_SIZE}&$orderby=receivedDateTime%20desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,hasAttachments`;
-      currentUrl = url;
-      const data = await graph(endpoint);
-      currentMessages = data.value || [];
-      nextLink = data["@odata.nextLink"] || null;
-      if (push) prevLinks = [];
-      renderMessages(currentMessages);
-      if (nextLink || prevLinks.length) {
-        show("pager",true);
-        $("pageInfo").textContent = `${currentMessages.length} email`;
-        $("prev").disabled = prevLinks.length===0;
-        $("next").disabled = !nextLink;
-      }
-    } catch(e) {
-      $("messageList").innerHTML=`<div class="empty error">${escapeHtml(e.message)}<br><br>Kiểm tra quyền Mail.Read và thử đăng nhập lại.</div>`;
-    }
-  }
-
-  function renderMessages(messages) {
-    const q = $("search").value.trim().toLocaleLowerCase("vi");
-    const filtered = messages.filter(m => [m.subject,m.from?.emailAddress?.name,m.from?.emailAddress?.address,m.bodyPreview].join(" ").toLocaleLowerCase("vi").includes(q));
-    if (!filtered.length) { $("messageList").innerHTML='<div class="empty">Không tìm thấy email trong danh sách đã tải.</div>'; return; }
-    $("messageList").innerHTML = filtered.map(m => `
-      <div class="msg ${m.isRead?"":"unread"}" data-id="${escapeHtml(m.id)}">
-        <div class="sender">${m.isRead?"":'<span class="dot"></span>'}${escapeHtml(m.from?.emailAddress?.name || m.from?.emailAddress?.address || "Không rõ người gửi")}</div>
-        <div class="content"><div class="subject">${escapeHtml(m.subject || "(Không có tiêu đề)")}</div><div class="preview">${escapeHtml(m.bodyPreview || "")}</div></div>
-        <div class="date">${fmtDate(m.receivedDateTime)}</div>
-      </div>`).join("");
-    document.querySelectorAll(".msg").forEach(el=>el.addEventListener("click",()=>openMessage(el.dataset.id)));
-  }
-
-  async function openMessage(id) {
-    show("mailView",false); show("readerView",true);
-    $("readerContent").innerHTML='<div class="empty">Đang mở email...</div>';
-    try {
-      const m = await graph(`${GRAPH}/me/messages/${encodeURIComponent(id)}?$select=subject,from,toRecipients,ccRecipients,receivedDateTime,body,hasAttachments`);
-      const bodyText = m.body?.contentType === "html" ? htmlToText(m.body.content) : (m.body?.content || "");
-      $("readerContent").innerHTML = `
-        <h2>${escapeHtml(m.subject || "(Không có tiêu đề)")}</h2>
-        <div class="meta"><b>Người gửi:</b> ${escapeHtml(m.from?.emailAddress?.name || "")} &lt;${escapeHtml(m.from?.emailAddress?.address || "")}&gt;<br>
-        <b>Người nhận:</b> ${escapeHtml((m.toRecipients||[]).map(x=>x.emailAddress?.address).join(", "))}<br>
-        <b>Ngày nhận:</b> ${fmtDate(m.receivedDateTime)}${m.hasAttachments?"<br><b>Đính kèm:</b> Có (mở bằng Outlook để tải tệp)":""}</div>
-        <div class="body">${escapeHtml(bodyText)}</div>`;
-    } catch(e) {
-      $("readerContent").innerHTML=`<div class="empty error">${escapeHtml(e.message)}</div>`;
-    }
-  }
-
-  function htmlToText(html) {
-    const doc = new DOMParser().parseFromString(html || "", "text/html");
-    doc.querySelectorAll("script,style,iframe,object,embed").forEach(x=>x.remove());
-    return (doc.body.textContent || "").replace(/\n{3,}/g,"\n\n").trim();
-  }
-
-  $("signin").addEventListener("click",login);
-  $("signout").addEventListener("click",logout);
-  $("refresh").addEventListener("click",()=>loadFolder(currentFolder));
-  $("back").addEventListener("click",()=>{show("readerView",false);show("mailView",true);});
-  $("search").addEventListener("input",()=>renderMessages(currentMessages));
-  document.querySelectorAll(".folder").forEach(b=>b.addEventListener("click",()=>loadFolder(b.dataset.folder)));
-  $("next").addEventListener("click",async()=>{
-    if (!nextLink) return;
-    prevLinks.push(currentUrl);
-    const url = nextLink;
-    await loadFolder(currentFolder,url,false);
-  });
-  $("prev").addEventListener("click",async()=>{
-    if (!prevLinks.length) return;
-    const url = prevLinks.pop() || null;
-    await loadFolder(currentFolder,url,false);
-  });
-
-  initPromise = init().catch(e=>{ $("signin").disabled = false; setStatus(e.message || "Lỗi khởi tạo ứng dụng.",true); });
-})();
-</script>
-</body>
-</html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hotmail Reader</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#172033}.top{background:#1457d9;color:white;padding:18px 5%;font-weight:bold;font-size:20px}main{max-width:1100px;margin:24px auto;padding:0 14px}.notice,.panel{background:white;border:1px solid #e4eaf3;border-radius:12px;padding:18px;margin-bottom:14px}.notice{background:#fff8e7;border-color:#f4d58b;font-size:13px;line-height:1.5}.login{max-width:500px;margin:45px auto;text-align:center;padding:30px}h1{font-size:23px}p,.meta,.status{color:#64748b;font-size:13px;line-height:1.5}input,button{font:inherit;border-radius:8px;padding:11px}input{border:1px solid #dce3ee;width:100%;margin:8px 0}button{border:0;background:#1457d9;color:white;font-weight:bold;cursor:pointer}button.secondary{background:#edf2fb;color:#29466f}.hidden{display:none!important}.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}.toolbar input{flex:1}.mail-layout{display:grid;grid-template-columns:minmax(260px,390px) 1fr;gap:14px}.mail-list{max-height:68vh;overflow:auto}.mail-item{padding:12px;border-bottom:1px solid #eef1f5;cursor:pointer}.mail-item:hover,.mail-item.active{background:#eef5ff}.subject{font-size:14px}.unread .subject{font-weight:bold}.empty{text-align:center;padding:35px;color:#7a8798}.reader h2{font-size:20px}.reader iframe{width:100%;min-height:55vh;border:0}.preview{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}.error{color:#b42318}@media(max-width:720px){.mail-layout{grid-template-columns:1fr}.mail-list{max-height:38vh}}
+</style></head><body>
+<header class="top">✉ Hotmail Reader <small style="display:block;font-size:11px">Trình xem email · Chỉ đọc</small></header><main>
+<div class="notice"><b>Chế độ chỉ đọc:</b> Chỉ dùng quyền <b>Mail.Read</b>. Không gửi, xóa, di chuyển hoặc chỉnh sửa email. Phiên Microsoft được quản lý bởi máy chủ riêng của bạn.</div>
+<section id="loginPanel" class="panel login"><div style="font-size:42px">📬</div><h1>Hotmail / Outlook Reader</h1><p>Nhập mật khẩu riêng của ứng dụng để mở quyền truy cập.</p><form id="passwordForm"><input id="appPassword" type="password" placeholder="Mật khẩu ứng dụng" required><button id="passwordBtn">Mở ứng dụng</button></form><div id="loginStatus" class="status"></div></section>
+<section id="connectPanel" class="panel login hidden"><div style="font-size:42px">🔐</div><h1>Kết nối tài khoản Microsoft</h1><p>Thực hiện lần đầu hoặc khi Microsoft yêu cầu đăng nhập lại.</p><button id="connectBtn">Đăng nhập Microsoft</button> <button class="secondary" id="logoutBtn1">Đăng xuất ứng dụng</button><div id="connectStatus" class="status"></div></section>
+<section id="mailPanel" class="hidden"><div class="toolbar"><b id="accountLabel">Hộp thư</b><span style="flex:1"></span><button class="secondary" id="refreshBtn">Làm mới</button><button class="secondary" id="logoutBtn2">Đăng xuất</button></div><div class="mail-layout"><div class="panel"><div class="toolbar"><input id="searchBox" placeholder="Tìm trong email..."><button id="searchBtn">Tìm</button></div><div id="mailList" class="mail-list"><div class="empty">Đang tải...</div></div><div id="listStatus" class="status"></div></div><article class="panel reader" id="reader"><div class="empty">Chọn một email để xem.</div></article></div></section>
+</main><script>
+const API="https://workerspages.bui-tuong-chat.workers.dev";const $=id=>document.getElementById(id);let allMessages=[];
+async function api(path,options={}){const r=await fetch(API+path,{...options,credentials:"include",headers:{"Content-Type":"application/json",...(options.headers||{})}});const t=r.headers.get("content-type")||"";const d=t.includes("json")?await r.json():await r.text();if(!r.ok)throw Error(d&&d.error?d.error:"HTTP_"+r.status);return d}
+function show(id){["loginPanel","connectPanel","mailPanel"].forEach(x=>$(x).classList.toggle("hidden",x!==id))}
+function msg(id,s,err=false){$(id).textContent=s;$(id).className="status"+(err?" error":"")}
+function date(v){if(!v)return "";let d=new Date(v);return isNaN(d)?v:d.toLocaleString("vi-VN")}
+async function check(){try{let s=await api("/api/status");if(!s.appAuthenticated){show("loginPanel");return}if(!s.microsoftConnected){show("connectPanel");return}show("mailPanel");await me();await load()}catch(e){show("loginPanel");msg("loginStatus","Lỗi kiểm tra phiên: "+e.message,true)}}
+$("passwordForm").onsubmit=async e=>{e.preventDefault();$("passwordBtn").disabled=true;msg("loginStatus","Đang xác thực...");try{await api("/auth/password",{method:"POST",body:JSON.stringify({password:$("appPassword").value})});$("appPassword").value="";await check()}catch(x){msg("loginStatus","Đăng nhập lỗi: "+x.message,true)}finally{$("passwordBtn").disabled=false}};
+$("connectBtn").onclick=()=>location.href=API+"/auth/login";
+async function logout(){try{await api("/auth/logout",{method:"POST",body:"{}"})}catch(e){}show("loginPanel");msg("loginStatus","Đã đăng xuất")}
+$("logoutBtn1").onclick=logout;$("logoutBtn2").onclick=logout;
+async function me(){try{let x=await api("/api/me");$("accountLabel").textContent=x.displayName||x.mail||x.userPrincipalName||"Hộp thư"}catch(e){}}
+async function load(){$("mailList").innerHTML='<div class="empty">Đang tải thư...</div>';try{let d=await api("/api/messages?top=50");allMessages=Array.isArray(d)?d:(d.value||d.messages||[]);render(allMessages);msg("listStatus","Đã tải "+allMessages.length+" email.")}catch(e){$("mailList").textContent="Lỗi tải email: "+e.message;msg("listStatus","",true)}}
+function render(items){$("mailList").innerHTML="";if(!items.length){$("mailList").innerHTML='<div class="empty">Không tìm thấy email.</div>';return}items.forEach(m=>{let div=document.createElement("div");div.className="mail-item"+(m.isRead===false?" unread":"");let a=document.createElement("div");a.className="subject";a.textContent=m.subject||"(Không có tiêu đề)";let b=document.createElement("div");b.className="meta";b.textContent=(m.from?.emailAddress?.name||m.from?.emailAddress?.address||"Người gửi")+" · "+date(m.receivedDateTime);let c=document.createElement("div");c.className="meta";c.textContent=m.bodyPreview||"";div.append(a,b,c);div.onclick=()=>openMail(m.id,div);$("mailList").append(div)})}
+async function openMail(id,el){document.querySelectorAll(".mail-item").forEach(x=>x.classList.remove("active"));el.classList.add("active");$("reader").textContent="Đang mở email...";try{let m=await api("/api/message?id="+encodeURIComponent(id));let h=document.createElement("h2");h.textContent=m.subject||"(Không có tiêu đề)";let info=document.createElement("div");info.className="meta";info.textContent="Từ: "+(m.from?.emailAddress?.address||m.from?.emailAddress?.name||"")+" · "+date(m.receivedDateTime);let body=document.createElement("div");body.style.borderTop="1px solid #eee";body.style.marginTop="14px";body.style.paddingTop="14px";let content=m.body?.content||m.bodyPreview||"";if((m.body?.contentType||"").toLowerCase()==="html"){let f=document.createElement("iframe");f.sandbox="";f.srcdoc=content;body.append(f)}else{let p=document.createElement("div");p.className="preview";p.textContent=content;body.append(p)}$("reader").replaceChildren(h,info,body)}catch(e){$("reader").textContent="Không mở được email: "+e.message}}
+function search(){let q=$("searchBox").value.trim().toLocaleLowerCase("vi");render(!q?allMessages:allMessages.filter(m=>[m.subject,m.from?.emailAddress?.name,m.from?.emailAddress?.address,m.bodyPreview].some(v=>String(v||"").toLocaleLowerCase("vi").includes(q))))}
+$("searchBtn").onclick=search;$("searchBox").onkeydown=e=>{if(e.key==="Enter")search()};$("refreshBtn").onclick=load;check();
+</script></body></html>
